@@ -369,3 +369,123 @@ Cada roteador escolhe **apenas o próximo salto** (*hop-by-hop*), delegando a de
 19. Proxy ARP e sub-redes aumentam a quantidade total de endereços IPv4?
 
 20. Por que atualmente usamos CIDR em vez das classes A, B e C?
+
+
+# Aula 8 — Manipulação de Endereços IP (Parte 2)
+
+## O que você precisa guardar dessa aula
+
+- **CIDR:** endereçamento sem classes, com blocos de tamanhos variáveis.
+- **Prefixo `/n`:** n bits de rede; total de endereços = `2^(32 − n)`.
+- **Prefixo maior → bloco menor; prefixo menor → bloco maior.**
+- **Divisão:** aumenta o prefixo; quantidade de partes iguais = `2^(novo prefixo − original)`.
+- **Agregação exata:** reúne blocos contínuos e alinhados; simplifica rotas, sem eliminar as sub-redes.
+- **Longest Prefix Match:** escolhe o maior prefixo que realmente contém o destino.
+- **Rota padrão `/0`:** utilizada quando nenhuma rota mais específica corresponde.
+- **VLSM:** sub-redes de tamanhos diferentes; **CIDR:** endereçamento sem classes e agregação.
+- **Distribuição hierárquica:** blocos maiores são subdivididos por registros e provedores.
+
+## Perguntas para conferir seu entendimento
+
+1. Uma organização precisa de cerca de 1.000 endereços. Por que as antigas classes B e C seriam pouco adequadas? Qual é o menor bloco CIDR que oferece pelo menos 1.000 endereços totais?
+2. Para `200.17.212.177/26`, determine o endereço da sub-rede, o broadcast e o Host-ID. Explique como encontrou os limites do bloco.
+3. O endereço `130.97.16.132/20` pertence a qual sub-rede? Determine o intervalo completo do bloco e explique por que seu limite não ocorre a cada 256 endereços.
+4. Divida `200.17.0.0/16` em quatro blocos iguais. Quais são os prefixos e endereços de rede resultantes? Quantos endereços existem em cada bloco?
+5. Um provedor divide um `/20` em blocos `/24`. Quantos clientes podem receber um bloco? Por que aumentar o prefixo permite criar mais blocos, embora cada um fique menor?
+6. Agregue exatamente as redes `200.17.200.0/24` até `200.17.203.0/24`. Qual é o prefixo resultante e qual intervalo ele cobre?
+7. As redes `200.17.201.0/24` e `200.17.202.0/24` são consecutivas. Elas podem ser representadas por um único `/23` sem incluir endereços extras? Justifique pelo alinhamento dos blocos.
+8. Uma tabela contém `200.17.0.0/16`, `200.17.212.0/24`, `200.17.212.128/25` e `0.0.0.0/0`. Qual rota é escolhida para `200.17.212.177`? E para `200.17.212.50`? Justifique cada escolha.
+9. Na tabela da questão anterior, qual rota atende `8.8.8.8`? Por que a presença de uma rota `/25` não faz dela a escolhida para qualquer destino?
+10. Uma empresa precisa de sub-redes para 100, 50 e 20 hosts. Considerando a reserva convencional dos endereços de rede e broadcast, quais seriam os menores prefixos adequados? Como o VLSM evita desperdício nesse caso?
+11. Um roteador anuncia uma rota agregada para quatro redes, mas perdeu o caminho para uma delas. Por que o anúncio agregado, sozinho, não garante a entrega a todas as redes representadas?
+12. Explique como a distribuição hierárquica de endereços facilita a agregação de rotas. Por que isso pode reduzir o número de entradas nas tabelas de outros roteadores?
+
+# Aula 9 — O Protocolo IP (Parte 1)
+
+## O que você precisa guardar dessa aula
+
+- **IP:** serviço best effort, sem conexão e sem garantia de entrega, ordem ou ausência de duplicatas.
+- **Confiabilidade:** depende de protocolos nas pontas, como TCP, ou da aplicação.
+- **IHL:** tamanho do cabeçalho em unidades de 4 bytes; mínimo 5 → 20 B, máximo 15 → 60 B.
+- **Tamanho total:** cabeçalho + payload; campo de 16 bits → até 65.535 B.
+- **DSCP:** tratamento do tráfego conforme políticas; **ECN:** sinalização de congestionamento.
+- **MTU:** limite do pacote IP no enlace; Ethernet usual → 1.500 B.
+- **Fragmentação IPv4:** cada fragmento recebe seu próprio cabeçalho.
+- **Identificador:** associa fragmentos; **DF:** proíbe fragmentação; **MF:** indica que há dados posteriores.
+- **Offset:** posição no payload original, em unidades de 8 bytes.
+- **Cálculo:** descontar o cabeçalho da MTU e ajustar o payload dos fragmentos não finais para múltiplo de 8.
+
+## Perguntas para conferir seu entendimento
+
+1. Dois datagramas são enviados em sequência, mas o segundo chega primeiro e o primeiro chega duplicado. Isso viola alguma garantia do IP? Quem pode tratar esses problemas?
+2. O que significa dizer que o IP é não orientado à conexão? Explique por que dois pacotes da mesma comunicação podem receber encaminhamentos diferentes.
+3. Um datagrama tem `IHL = 7` e tamanho total de 1.000 B. Quantos bytes pertencem ao cabeçalho e ao payload? Quanto do cabeçalho excede a parte fixa?
+4. Um equipamento interpreta `IHL = 5` como um cabeçalho de 5 B. Qual é o erro e como ele afeta a identificação do início do payload?
+5. Por que marcar todos os pacotes como prioridade máxima não garante melhor desempenho? Relacione sua resposta às políticas aplicadas pelos roteadores ao DSCP.
+6. Compare priorizar tráfego com DSCP e sinalizar congestionamento com ECN. Por que esses mecanismos têm funções diferentes?
+7. Uma rede tem capacidade muito superior à demanda média. Como isso ajuda a reduzir filas? Por que ainda podem ocorrer atrasos e perdas durante picos?
+8. Um datagrama de 3.400 B, com cabeçalho de 20 B e `DF = 0`, atravessa um enlace de MTU 1.500 B. Monte uma tabela com payload, tamanho total, offset em bytes, valor do campo offset e MF de cada fragmento.
+9. No exercício anterior, por que a soma dos tamanhos totais dos fragmentos é maior que 3.400 B? Calcule a quantidade adicional de bytes de cabeçalho.
+10. Um enlace tem MTU de 620 B e o cabeçalho IP ocupa 20 B. Qual é o maior payload permitido em um fragmento não final? E se a MTU cair para 619 B? Mostre o ajuste necessário.
+11. Um fragmento apresenta offset de campo igual a 185 e `MF = 1`. Em qual byte do payload original ele começa? É possível concluir que ele é o último fragmento? Justifique.
+12. Um datagrama excede a MTU do próximo enlace e possui `DF = 1`. Por que o roteador não pode simplesmente dividi-lo? Explique a diferença entre o limite de tamanho do IPv4 e a MTU de um enlace.
+
+# Aula 10 — O Protocolo IP (Parte 2)
+
+## O que você precisa guardar dessa aula
+
+- **Remontagem:** ocorre no destino; fragmentação pode ocorrer na origem e nos roteadores IPv4.
+- **Refragmentação:** mantém o identificador e os offsets relativos ao payload original.
+- **MF = 0:** somente no fragmento que contém o final do datagrama original.
+- **Perda de fragmento:** impede a remontagem completa; o IP não retransmite por conta própria.
+- **TTL:** limita saltos; cada roteador decrementa e descarta se chegar a zero.
+- **Protocolo:** identifica o conteúdo do payload — ICMP 1, TCP 6, UDP 17.
+- **Checksum IPv4:** cobre apenas o cabeçalho; precisa ser atualizado quando o TTL muda.
+- **Cálculo do checksum:** soma em complemento de 1, reincorpora o carry e complementa o resultado.
+- **Opções:** ampliam o cabeçalho; incluem Source Route, Record Route e Timestamp.
+- **Padding:** completa o cabeçalho até um múltiplo de 4 B; IHL e offset usam unidades diferentes.
+
+## Perguntas para conferir seu entendimento
+
+1. Um datagrama de 2.800 B, com cabeçalho de 20 B e `DF = 0`, atravessa um enlace de MTU 600 B. Determine payload, tamanho total, offset de campo e MF de todos os fragmentos. Por que os fragmentos não finais não ocupam toda a MTU?
+2. Por que remontar o datagrama em cada roteador intermediário aumentaria o custo do encaminhamento? Considere memória, espera por fragmentos e mudanças de MTU.
+3. Um datagrama de 3.400 B foi fragmentado para MTU 1.500 B e depois encontra MTU 1.000 B. Considerando cabeçalhos de 20 B e fragmentação permitida, calcule os payloads, offsets de campo e flags MF após a refragmentação.
+4. Um fragmento intermediário com `MF = 1` é dividido em dois. Por que o segundo pedaço também precisa manter `MF = 1`, mesmo sendo o último pedaço daquele fragmento?
+5. Todos os fragmentos chegam ao destino, exceto um. Por que não é possível entregar o datagrama completo? O próprio IP solicita ou executa sua retransmissão?
+6. Um pacote entra no primeiro roteador com `TTL = 3` e precisa atravessar quatro roteadores. Em qual deles ele será descartado? Mostre a evolução do TTL e explique como isso limita loops.
+7. Um pacote passa por um roteador sem sofrer fragmentação nem alteração no payload. Mesmo assim, por que seu checksum IPv4 precisa ser atualizado?
+8. Um bit do payload é alterado, mas o cabeçalho permanece intacto. O checksum IPv4 detecta esse erro? O que esse exemplo mostra sobre o alcance dessa verificação?
+9. Usando palavras didáticas de 4 bits, calcule o checksum de `1101` e `0101`, reincorporando o carry. Depois confira a soma incluindo o checksum e explique como um resultado válido é reconhecido.
+10. O campo Protocolo de um datagrama vale 17. Como isso orienta o processamento no destino? Por que esse campo não substitui uma porta de transporte?
+11. Um cabeçalho contém 20 B fixos e 7 B de opções. Quantos bytes de padding são necessários e qual será o IHL? Por que usar diretamente 27 como IHL estaria errado?
+12. Compare Strict Source Route, Loose Source Route e Record Route. Qual determina os nós a percorrer e qual registra o percurso? Como Timestamp acrescenta informação ao registro do caminho?
+
+# Aula 11 — O Protocolo ICMP
+
+## O que você precisa guardar dessa aula
+
+- **ICMP:** mensagens de erro e controle da camada de rede, transportadas em IP.
+- **Não garante entrega:** mensagens ICMP também podem se perder; erro ICMP não gera outro erro ICMP.
+- **Tipo + código:** identificam a mensagem e detalham seu motivo; checksum verifica a mensagem ICMP.
+- **Ping:** Echo Request 8 e Echo Reply 0; mede RTT, mas não comprova funcionamento da aplicação.
+- **Tipo 3:** destino inatingível; códigos distinguem rede, host, protocolo, porta e necessidade de fragmentação.
+- **Tipo 3, código 4:** fragmentação necessária com DF ativo; **tipo 11:** tempo excedido, incluindo TTL esgotado.
+- **Traceroute:** usa TTL crescente; a variante UDP pode reconhecer o destino por Port Unreachable.
+- **`* * *`:** nenhuma resposta dentro do tempo de espera; não prova defeito no roteador.
+- **RTT inclui ida e volta:** rotas podem ser assimétricas; TTL da resposta depende também do valor inicial.
+- **Record Route:** limitado pelo espaço de opções; traceroute não precisa armazenar o caminho no cabeçalho.
+
+## Perguntas para conferir seu entendimento
+
+1. Se o ICMP informa falhas de entrega, por que ele não torna o IP confiável? Considere tanto a perda do datagrama original quanto a perda da mensagem de erro.
+2. Por que não se deve gerar uma mensagem de erro ICMP em resposta a outra mensagem de erro ICMP? Que problema poderia surgir se isso fosse permitido?
+3. Um servidor responde ao ping, mas seu site não abre. O que o teste confirmou e o que permanece sem confirmação? Dê duas possíveis explicações compatíveis com esse resultado.
+4. Um host não responde ao ping. É correto concluir que ele está desligado? Apresente outras duas explicações e justifique por que o resultado é inconclusivo.
+5. Compare ICMP tipo 3 com códigos 0, 1 e 3. Como distinguir rede inatingível, host inatingível e porta inatingível ajuda a localizar o problema?
+6. Um datagrama UDP chega ao host correto, mas não há serviço na porta de destino. Qual mensagem ICMP pode retornar? Por que alcançar o endereço IP não basta para a aplicação funcionar?
+7. Um roteador recebe um datagrama maior que a MTU de saída com `DF = 1`. Qual tipo e código ICMP podem ser enviados à origem? Que ajuste na transmissão pode evitar a repetição do problema?
+8. Explique como probes com TTL 1, 2 e 3 revelam roteadores diferentes no traceroute. Por que uma única tentativa com TTL muito alto não revela necessariamente todos os intermediários?
+9. Na variante de traceroute que envia UDP a uma porta sem serviço, qual resposta costuma indicar que o destino foi alcançado? Por que ela difere das respostas dos roteadores intermediários?
+10. O traceroute mostra `* * *` em um salto, mas os saltos seguintes respondem. Por que isso enfraquece a hipótese de uma interrupção completa naquele ponto? O que pode explicar o silêncio?
+11. Um Echo Reply chega com TTL 52. É possível descobrir exatamente quantos roteadores ele atravessou sem conhecer o TTL inicial? Mesmo conhecendo esse valor, por que o resultado pode não coincidir com o caminho de ida mostrado pelo traceroute?
+12. Uma rodada de traceroute envia três probes com o mesmo TTL e recebe respostas com tempos e endereços diferentes. Como filas e múltiplos caminhos podem explicar isso? Por que esses tempos não representam apenas o atraso do enlace entre dois saltos consecutivos?
